@@ -1,0 +1,8 @@
+Loaded Miniforge which replaces Anaconda. 
+- The conda/mamba executables are included.
+- The default channel is conda-forge.
+
+For details see https://www.rc.virginia.edu/2024/10/transition-from-anaconda-to-miniforge-october-15-2024/
+usage: conda [-h] [--no-plugins] [-V] COMMAND ...
+conda: error: argument COMMAND: invalid choice: 'activate' (choose from 'clean', 'compare', 'config', 'create', 'info', 'init', 'install', 'list', 'notices', 'package', 'remove', 'uninstall', 'rename', 'run', 'search', 'update', 'upgrade', 'doctor', 'env')
+python: can't open file '/sfs/gpfs/tardis/project/cphg-millerlab/katherine_shillito/isch-ctrl-rmats/02_scripts/rmats.py': [Errno 2] No such file or directory
