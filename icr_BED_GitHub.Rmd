@@ -1,0 +1,94 @@
+---
+title: "icr_BED_GitHub"
+output: html_document
+date: "2024-12-02"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#BED Function, SE Events
+```{r}
+#Create function that converts alt splicing data from rMATS output to BED format 
+#Specifically focusing on skipped exon events
+#Generates two BED12 formatted lines representing two different SE scenarios (Inclusion and Exclusion)
+#Inclusion = upstream exon, skipped exon, downstream exon
+#Exclusion = upstream exon, downstream exon
+```
+
+
+```{r}
+rMATStoBEDSE <- function(rmats_line) {
+  event <- strsplit(rmats_line, "\t")[[1]]
+  
+  #extracting necessary information
+  ID <- event[1]
+  chr <- event[4]
+  strand <- event[5]
+  exonStart <- as.integer(event[6])
+  exonEnd <- as.integer(event[7])
+  upstreamES <- as.integer(event[8])
+  upstreamEE <- as.integer(event[9])
+  downstreamES <- as.integer(event[10])
+  downstreamEE <- as.integer(event[11])
+  
+  #calculate block sizes
+  UEsize <- upstreamEE - upstreamES
+  DEsize <- downstreamEE - downstreamES
+  MEsize <- exonEnd - exonStart
+  
+  #calculate block starts
+  UEstart <- 0
+  MEstart <- exonStart - upstreamES
+  DEstart <- downstreamES - upstreamES
+  
+  #define BED12 format fields
+  chrom <- chr
+  chromStart <- upstreamES
+  chromEnd <- downstreamEE
+  name <- ID
+  score <- 500
+  thickStart <- upstreamES
+  thickEnd <- downstreamEE
+  itemRgb <- "255,0,0"
+  
+  #inclusion bed12 line
+   incBlockCount <- 3
+  incBlockSizes <- paste(UEsize, MEsize, DEsize, sep = ",")
+  incBlockStarts <- paste(UEstart, MEstart, DEstart, sep = ",")
+  inclusion_track <- paste(
+    chrom, chromStart, chromEnd, name, score, strand, thickStart, thickEnd,
+    itemRgb, incBlockCount, incBlockSizes, incBlockStarts, sep = "\t"
+  )
+
+  #exclusion bed12 line
+  excBlockCount <- 2
+  excBlockSizes <- paste(UEsize, DEsize, sep = ",")
+  excBlockStarts <- paste(UEstart, DEstart, sep = ",")
+  exclusion_track <- paste(
+    chrom, chromStart, chromEnd, name, score, strand, thickStart, thickEnd,
+    itemRgb, excBlockCount, excBlockSizes, excBlockStarts, sep = "\t"
+  )
+  
+  
+  cat("track name=\"Inclusion Track\"\n", inclusion_track, "\n", sep = "")
+  cat("track name=\"Exclusion Track\"\n", exclusion_track, "\n", sep = "")
+}
+```
+
+
+```{r}
+se.df = read_tsv("/path/to/rmats/output/SE.MATS.JCEC.txt")
+
+
+#run function on one event and save output to bed file
+se_event1 = se.df[1, ]
+se_event1_line <- paste(se_event1, collapse = "\t")
+
+output_file = "se_events.bed"
+sink(output_file)
+rMATStoBEDSE(se_event1_line)
+sink()
+```
+
