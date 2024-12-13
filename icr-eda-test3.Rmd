@@ -1,0 +1,134 @@
+---
+title: "isch-ctrl-rmats_eda2"
+output: html_document
+date: "2024-12-04"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(tidyverse)
+library(maser)
+library(rtracklayer)
+library(ggplot2)
+library(ggplot2)
+library(dplyr)
+```
+
+```{r}
+t3summary.df=read_tsv("/project/cphg-millerlab/katherine_shillito/isch-ctrl-rmats/04_post-outputs/test3-post-directory/summary.txt")
+```
+
+
+```{r}
+#Total ASE Frequencies (Calculated From JCEC)
+t3barplot1 = barplot(t3summary.df$TotalEventsJCEC, names.arg=t3summary.df$EventType, 
+                   main="Total Alternative Splicing Events Identified",
+                   xlab="Event Type", ylab="Frequency", col="blue", 
+                   ylim = c(0, max(t3summary.df$TotalEventsJCEC) * 1.2))
+text(x = t3barplot1,y = t3summary.df$TotalEventsJCEC, 
+     labels = t3summary.df$TotalEventsJCEC, pos=3, cex=0.9)
+
+
+#Significant ASE Frequencies (Calculated From JCEC)
+t3barplot2 = barplot(t3summary.df$SignificantEventsJCEC, names.arg=t3summary.df$EventType, 
+                   main="Significant Alternative Splicing Events Identified",
+                   xlab="Event Type", ylab="Frequency", col="lightblue", 
+                   ylim = c(0, max(t3summary.df$SignificantEventsJCEC) * 1.2))
+text(x = t3barplot2,y = t3summary.df$SignificantEventsJCEC, 
+     labels = t3summary.df$SignificantEventsJCEC, pos=3, cex=0.9)
+```
+
+
+```{r}
+#test 3 maser data
+mas.data <- maser("/project/cphg-millerlab/katherine_shillito/isch-ctrl-rmats/04_post-outputs/test3-post-directory", c("Ischemic", "Control"), ftype = "JCEC")
+summary(mas.data, type = "SE")
+#filter this data:
+#filter out low coverage reads:
+mas.data.filt <- filterByCoverage(mas.data, avg_reads = 10)
+#select statistically significant events:
+mas.data.filt.top <- topEvents(mas.data.filt, fdr = 0.01, deltaPSI = 0.05)
+summary(mas.data.filt.top)
+```
+
+
+```{r}
+#LTBP1 Events
+mas.data.ltbp1 <- geneEvents(mas.data.filt, geneS = "LTBP1")
+print(mas.data.ltbp1)
+```
+
+```{r}
+#Significant Events
+volcano(mas.data.filt, type = "SE")
+#boxplot_PSI_levels(mas.data.filt.top, type = "SE", )
+```
+
+
+```{r}
+library(ggplot2)
+p <- dotplot(mas.data.filt, type = "SE") + 
+  coord_flip() + # This switches the x and y axes
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "green")
+print(p)
+```
+
+
+```{r}
+
+ggplot(mas.data.filt, aes(x=Condition, y=PSI, fill=Condition)) +
+  geom_violin(trim=FALSE) + 
+  geom_boxplot(width=0.1, outlier.shape=NA, color="black", alpha=0.7) +
+  theme_minimal() +
+  labs(title="PSI Distribution for Skipped Exon Events", 
+       x="Condition", y="Percent Spliced In (PSI)")
+
+
+ggplot(filtered_SE_data, aes(x=DeltaPSI)) +
+  geom_histogram(binwidth=0.05, fill="blue", alpha=0.7, color="black") +
+  theme_minimal() +
+  labs(title="ΔPSI Distribution for Skipped Exon Events", 
+       x="ΔPSI (Percent Spliced In Change)", y="Frequency")
+```
+
+
+```{r}
+top_SE_events <- mas.data.filt.top %>% 
+  arrange(desc(abs(DeltaPSI))) %>% 
+  head(10) # Top 5 significant events
+knitr::kable(top_SE_events[, c("Gene", "DeltaPSI", "pvalue", "Direction")])
+```
+
+```{r}
+se.df <- read_tsv("/project/cphg-millerlab/katherine_shillito/isch-ctrl-rmats/04_post-outputs/test3-post-directory/SE.MATS.JCEC.txt")
+
+ltbp1_events <- se.df %>%
+  filter(geneSymbol == "LTBP1") %>%
+  select(IncLevelDifference, PValue, FDR)
+
+knitr::kable(ltbp1_events, col.names = c("ΔPSI", "p-value", "Significant"))
+```
+
+
+```{r}
+# Plot p-value distribution for LTBP1
+ggplot(ltbp1_events, aes(x=PValue)) +
+  geom_histogram(binwidth=0.01, fill="blue", color="black", alpha=0.7) +
+  labs(title="P-Value Distribution for LTBP1 Skipped Exon Events",
+       x="P-Value",
+       y="Frequency") +
+  theme_minimal()
+
+
+ggplot(ltbp1_events, aes(x=PValue)) +
+  geom_density(fill="blue", alpha=0.5) +
+  labs(title="P-Value Distribution for LTBP1 Skipped Exon Events",
+       x="P-Value",
+       y="Density") +
+  theme_minimal()
+```
+
