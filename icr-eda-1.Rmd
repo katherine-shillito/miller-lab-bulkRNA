@@ -1,0 +1,73 @@
+---
+title: "icr-eda1"
+output: html_document
+date: "2025-02-11"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#packages
+library(tidyverse)
+library(maser)
+```
+
+
+```{r}
+#rmats1_data<-maser("/project/cphg-millerlab/katherine_shillito/isch-ctrl-rmats/04_post-outputs/post-directory1", c("Ischemic","Control"), ftype="JCEC")
+```
+
+```{r}
+SE_Data <- read_tsv("/project/cphg-millerlab/katherine_shillito/isch-ctrl-rmats/04_post-outputs/post-directory1/SE.MATS.JCEC.txt")
+```
+
+```{r}
+#filter by FDR and DPSI
+SE_Data_Significant <- SE_Data %>%
+  filter(FDR<0.05) %>%
+  filter(abs(IncLevelDifference)>0.05)
+```
+
+```{r}
+SE_Genes <- SE_Data_Significant %>%
+  group_by(geneSymbol) %>%
+  summarise(count = n(),
+            across(where(is.numeric), ~mean(.x, na.rm = TRUE), .names = "avg_{.col}"),
+            across(where(is.character), ~paste(unique(.x), collapse = ","), .names = "combined_{.col}")
+            ) %>%
+  arrange(desc(avg_IncLevelDifference))
+```
+
+```{r}
+#+DPSI = PSI Ischemic (sample 1) > PSI Control (sample 2)
+
+SE_DPSI_Pos = SE_Genes %>%
+  filter(avg_IncLevelDifference > 0)
+
+head(SE_DPSI_Pos, 10)
+```
+
+
+```{r}
+#-DPSI = PSI Control (sample 2) > PSI Ischemic (sample 1)
+
+SE_DPSI_Neg = SE_Genes %>%
+  filter(avg_IncLevelDifference < 0) %>%
+  arrange(avg_IncLevelDifference)
+
+head(SE_DPSI_Neg, 10)
+```
+
+
+
+SE_DPSI_Pos_Genes = SE_DPSI_Pos %>%
+  group_by(geneSymbol) %>%
+  summarise(
+    across(everything(), ~mean(.x, na.rm=T), .names = "avg_{.col}"),
+    count = n()) %>%
+  arrange(desc(avg_mean_DPSI))
+```
+
+

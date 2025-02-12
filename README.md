@@ -31,22 +31,30 @@ Run analysis in	slurm script to	use UVA	HPC.
 1. BAM Files with RNA Sequencing Data
 - Data filtered to remove explant samples and  include only coronary_artery tissue.
 - Sample Group 1: Ischemic Samples
-- Sample Group 2: Control Samples with no lesions
+- Sample Group 2: Control Samples
 - Comma separated lists of BAM files for sample groups obtained from Star_Pass2 directory: ischemic_bam_list.txt, control_bam_list.txt
 2. Transcript Annotation GTF File
-- Obtained from reference_genomes/hg38 directory: hg38.fa.sa.gz
+- gencode.v32.annotation.gtf
 
 ### Create Output Directories
 mkdir 02_prep_directory
-- will hold output of prep step; temporary directory
+- output of prep step; temporary directory
 mkdir 03_post_directory
-- will hold output of post step
+- output of post step; rmats output text files
 
 ### Run Analysis
-python rmats.py --b1 ischemic_bam_list.txt --b2 control_bam_list.txt --gtf hg38.knownGene.gtf --tmp 02_prep_directory --od 03_post_directory --readlength 150 --task both --novelSS
-- Read length is a required argument: 150 Base Pairs
-- Both prep and post steps of rMATS-turbo are run in a single run
-- Alternative splicing events involving novel/unannotated splice sites will be identified (optional argument)
+python $CONDA_PREFIX/bin/rmats.py --b1 ../01_inputs/bam_files/isch-bams1.txt \
+        --b2 ../01_inputs/bam_files/ctrl-bams1.txt \
+        --gtf /sfs/gpfs/tardis/project/cphg-millerlab/CAD_QTL/coronary_QTL/transcriptome/LeafCutter/STAR/gencode.v37.annotation.gtf \
+        --tmp ../03_prep-outputs/prep-directory1 \
+        --od ../04_post-outputs/post-directory1 \
+        --readLength 150 \
+        --task both
 
+
+
+- Read length is a required argument: 150 Base Pairs
+- rMATS-turbo prep and post steps are completed with a single run
+- Alternative splicing events involving novel/unannotated splice sites will be identified (optional argument)
 
 
