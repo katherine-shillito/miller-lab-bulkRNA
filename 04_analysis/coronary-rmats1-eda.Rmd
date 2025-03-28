@@ -1,0 +1,199 @@
+---
+title: "coronary-rmats1-eda"
+output: html_document
+date: "2025-02-11"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(dplyr)
+library(tidyverse)
+```
+
+# Import and Filter
+
+```{r}
+SE <- read_tsv("../03_outputs/post/post-directory1/SE.MATS.JCEC.txt") %>% mutate(Event = "SE")
+RI <- read_tsv("../03_outputs/post/post-directory1/RI.MATS.JCEC.txt") %>% mutate(Event = "RI")
+MXE <- read_tsv("../03_outputs/post/post-directory1/MXE.MATS.JCEC.txt") %>% mutate(Event = "MXE")
+A5SS <- read_tsv("../03_outputs/post/post-directory1/A5SS.MATS.JCEC.txt") %>% mutate(Event = "A5SS")
+A3SS <- read_tsv("../03_outputs/post/post-directory1/A3SS.MATS.JCEC.txt") %>% mutate(Event = "A3SS")
+
+df <- bind_rows(SE, RI, MXE, A5SS, A3SS)
+```
+
+```{r}
+## Filter 1
+#sufficient # of reads identified with a form of this event in both sample groups
+#focus on differential splicing events by removing those with extreme PSI values in one sample group
+
+# Function to sum comma-separated numeric values
+sum_comma_separated <- function(x) {
+  sapply(strsplit(x, ","), function(y) {
+    nums <- suppressWarnings(as.numeric(y))
+    sum(nums, na.rm = TRUE)
+  })
+}
+
+# Function to calculate the mean of comma-separated numeric values (removing NAs)
+mean_comma_separated <- function(x) {
+  sapply(strsplit(x, ","), function(y) {
+    nums <- suppressWarnings(as.numeric(y))
+    nums <- nums[!is.na(nums)]
+    if (length(nums) > 0) mean(nums, na.rm = TRUE) else NA_real_
+  })
+}
+
+df1 <- df %>%
+  mutate(
+    total_reads_1 = sum_comma_separated(IJC_SAMPLE_1) + sum_comma_separated(SJC_SAMPLE_1),
+    total_reads_2 = sum_comma_separated(IJC_SAMPLE_2) + sum_comma_separated(SJC_SAMPLE_2),
+    mean_IncLevel1 = mean_comma_separated(IncLevel1),
+    mean_IncLevel2 = mean_comma_separated(IncLevel2)
+  )
+
+df2 <- df1%>%
+  filter(mean_IncLevel1 >= 0.05 & mean_IncLevel1 <= 0.95
+         & mean_IncLevel2 >= 0.05 & mean_IncLevel2 <= 0.95)%>%
+  filter(total_reads_1>10 & total_reads_2>10)
+```
+
+
+```{r}
+df1 %>%
+  select(FDR, IncLevelDifference)%>%
+  summary()
+
+df1 %>%
+  count(Event)
+
+ggplot(df1, aes(x=IncLevelDifference, y= -log10(FDR), color= mean_IncLevel1 >= 0.05 & mean_IncLevel1 <= 0.95
+         & mean_IncLevel2 >= 0.05 & mean_IncLevel2 <= 0.95 & total_reads_1>10 & total_reads_2>10)) + 
+  geom_point() + labs(title = "Volcano Plot: df1 vs df2", x = "ΔPSI", y = "FDR (-log10(FDR))") + 
+  xlim(-1,1) + ylim(0,15) + scale_color_manual(values = c("darkgrey", "red"))
+```
+
+```{r}
+df2 %>%
+  select(FDR, IncLevelDifference)%>%
+  summary()
+
+df2%>%
+  count(Event)
+
+ggplot(df2, aes(x=IncLevelDifference, y= -log10(FDR), color= abs(IncLevelDifference)>0.1 & FDR < 0.1)) + 
+  geom_point() + labs(title = "Volcano Plot: df2 vs df3", x = "ΔPSI", y = "FDR (-log10(FDR))") + 
+  xlim(-1,1) + ylim(0,15) + scale_color_manual(values = c("darkgrey", "red"))
+```
+
+
+
+```{r}
+df2.plot <- df2 %>%
+  mutate(type = ifelse(IncLevelDifference>0, "+", "-"))%>%
+  group_by(Event,type)%>%
+  summarise(count=n())
+
+  
+
+ggplot(df2.plot, aes(x = Event, y = count, fill = Event)) +
+  geom_bar(stat = "identity", alpha = 0.8) +
+  labs(title = "Alternative Splicing Events Filtered 1",
+       x = "Event Type", y = "Count", fill = "Event Type") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+```{r}
+## Filter 2
+#statistically significant events with a low probability of false positives*
+
+df3 <- df2%>%
+  filter(abs(IncLevelDifference)>0.1 & FDR < 0.01)
+```
+
+```{r}
+df3.plot <- df3 %>%
+  group_by(Event) %>%
+  summarise(Count=n())
+
+ggplot(df3.plot, aes(x = Event, y = Count, fill = Event)) +
+  geom_bar(stat = "identity", alpha = 0.8) +
+  labs(title = "Alternative Splicing Events Filtered 2",
+       x = "Event Type", y = "Count", fill = "Event Type") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+```{r}
+df3.plot <- df3 %>%
+  mutate(type = ifelse(IncLevelDifference>0, "+", "-"))
+
+ggplot(df3.plot, aes(x = Event, fill = type)) +
+  geom_bar() +
+  labs(
+    x = "Event", 
+    y = "Count", 
+    fill = "ΔPSI", 
+    title = "Stacked Bar Chart of Events"
+  ) +
+  theme_minimal() +
+  scale_fill_manual(values = c("+" = "red3", "-" = "blue3"))
+```
+
+
+
+```{r}
+df3%>%
+  select(FDR, IncLevelDifference)%>%
+  summary()
+
+df3%>%
+  count(Event)
+
+df3%>%
+  count(geneSymbol)%>%
+  arrange(desc(n))
+
+df3%>%
+  count(GeneID)%>%
+  arrange(desc(n))
+
+ggplot(df3, aes(x=IncLevelDifference, y= -log10(FDR), color=Event)) + 
+  geom_point() + labs(title = "Volcano Plot", x = "Delta PSI", y = "FDR (-log10(FDR))") + 
+  xlim(-0.5,0.5) + ylim(0,13) + scale_color_manual(values = c("blue3", "red3", "orange2", "green3", "violet"))
+```
+
+# Top Differentially Spliced Events
+
+```{r}
+library(ggrepel)
+
+df3%>%
+  filter(IncLevelDifference>0.35)%>%
+  dplyr::select(ID...1, geneSymbol, FDR, IncLevelDifference, Event)%>%
+  arrange(desc(IncLevelDifference))
+df3%>%
+  filter(IncLevelDifference< -0.35)%>%
+  dplyr::select(ID...1, geneSymbol, FDR, IncLevelDifference, Event)%>%
+  arrange(IncLevelDifference)
+
+top.df3 = df3%>%
+  filter(abs(IncLevelDifference)>0.35)
+
+ggplot(df3, aes(x=IncLevelDifference, y= -log10(FDR), color=abs(IncLevelDifference)>0.35)) + 
+  geom_point() + 
+  labs(title = "Volcano Plot", x = "Delta PSI", y = "FDR (-log10(FDR))") + 
+  xlim(-0.5,0.5) + ylim(0,13) + 
+  scale_color_manual(values = c("grey","red3")) +
+  theme_minimal() + 
+  geom_text_repel(data = top.df3, aes(label = geneSymbol), box.padding = 0.5, max.overlaps = Inf)
+```
+
+```{r}
+write.csv(df3,"filtered-data1.csv", row.names = FALSE)
+```
+

@@ -1,31 +1,34 @@
-# Ischemic vs Control Alternative Splicing Events
+# Differential Alternative Splicing Events in Ischemic vs Control Coronary Artery Tissue
 
-## Overview
-The project aims to identify differential alternative splicing events between ischemic and control samples of bulk RNA sequencing data using rMATS-Turbo. The program identifies and quantifies five basic alternative splicing events; skipped exons, alternative 5' splice sites, alternative 3' splice sites, mutually exclusive exons, and retained introns. A statistical analysis is used to identify differential splicing between the two sample groups.
+## Project Overview
+This project aims to analyze differential alternative splicing between ischemic and control samples of coronary artery tissue from bulk RNA sequencing data. rMATS-Turbo is used to identify five basic splicing events (skipped exons, alternative 5' splice sites, alternative 3' splice sites, mutually exclusive exons, and retained introns) and quantify differential splicing between the two sample groups. 
 
-## Installation
-Required Dependencies:
+## rMATS-Turbo
+rMATS Turbo must be installed with several required dependencies:
 - Python(3.6.12 or 2.7.15)
 - BLAS, LAPACK
 - GNU Scientific Library (GSL 2.5)
 - GCC (>=5.4.0)
 - gfortran (Fortran 77)
 - CMake (3.15.4)
-
 Optional Dependencies:
 - PAIRDISE
 - DARTS
 - Samtools
 - STAR
 
-Install rMATS-Turbo and all required dependencies within a conda environment, specific to the project:
+Create a conda environment for the project and install all rMATS-Turbo and all of its required dependencies in one step in the project directory:
+
 conda create -n 01_rmats_env -c conda-forge -c bioconda rmats
 
-Activate Conda Environment:
+Activate the conda environment:
+
 conda activate 01_rmats_env
 
 ## Usage
-Run analysis in	slurm script to	use UVA	HPC.
+Create slurm script to run rMATS analysis using UVA research computing.
+
+nano ic-rmats1.sh
 
 ### Input Files
 1. BAM Files with RNA Sequencing Data

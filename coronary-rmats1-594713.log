@@ -22,10 +22,10 @@ EXON_NOT_MATCHED_TO_ANNOTATION: 60759928
 JUNCTION_NOT_MATCHED_TO_ANNOTATION: 17474396
 CLIPPED: 569475726
 total: 7965600085
-outcomes by BAM written to: ../03_prep-outputs/prep-directory1/2024-12-01-07_46_08_716323_read_outcomes_by_bam.txt
+outcomes by BAM written to: ../03_outputs/prep/prep-directory1/2024-12-01-07_46_08_716323_read_outcomes_by_bam.txt
 
 novel: 34218.533653736115
-The splicing graph and candidate read have been saved into ../03_prep-outputs/prep-directory1/2024-12-01-07_46_08_716323_*.rmats
+The splicing graph and candidate read have been saved into ../03_outputs/prep/prep-directory1/2024-12-01-07_46_08_716323_*.rmats
 save: 41.13560199737549
 loadsg: 1.5609378814697266
 

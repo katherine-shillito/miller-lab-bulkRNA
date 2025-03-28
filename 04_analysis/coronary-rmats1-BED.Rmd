@@ -1,0 +1,35 @@
+---
+title: "coronary-rmats1-BED"
+output: html_document
+date: "2025-03-28"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# BED File Input
+
+```{r}
+df3 <- read.csv("coronary-rmats1-filtered.csv")
+```
+
+```{r}
+#SE
+df3%>%
+  filter(Event=="SE", geneSymbol=="")%>%
+  dplyr::select("ID...1",	"GeneID",	"geneSymbol",	"chr",	"strand",	"exonStart_0base",	"exonEnd",	"upstreamES",	"upstreamEE",	"downstreamES",	"downstreamEE",	"ID...12",	"IJC_SAMPLE_1",	"SJC_SAMPLE_1",	"IJC_SAMPLE_2",	"SJC_SAMPLE_2",	"IncFormLen",	"SkipFormLen",	"PValue",	"FDR", "IncLevel1",	"IncLevel2", "IncLevelDifference")%>%
+  apply(1, function(row) paste(row, collapse = "\t"))%>%
+  cat(sep = "\n")
+```
+
+
+```{r}
+#MXE
+df3 %>%
+  filter(Event=="MXE" ,geneSymbol == "") %>%
+  dplyr::select("ID...1", "chr", "strand", "1stExonStart_0base", "1stExonEnd", "2ndExonStart_0base", "2ndExonEnd", "upstreamES", "upstreamEE", "downstreamES", "downstreamEE") %>%
+  apply(1, function(row) paste(row, collapse = "\t")) %>%
+  cat(sep = "\n")
+```
+
